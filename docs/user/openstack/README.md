@@ -81,8 +81,6 @@ The file can contain information about several clouds. For instance, the example
 In order to determine which cloud to use, the user can either specify it in the `install-config.yaml` file under `platform.openstack.cloud` or with `OS_CLOUD` environment variable.
 If both are omitted, then the cloud name defaults to `openstack`.
 
-There are certian environment variables that you can set along side a `clouds.yaml`, consult the following [documentation](https://www.terraform.io/docs/providers/openstack/#configuration-reference) for more information.
-
 ## Red Hat Enterprise Linux CoreOS (RHCOS)
 
 Get the latest RHCOS image [here](https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/pre-release/latest/). The installer requires a proper RHCOS image in the OpenStack cluster or project:
@@ -91,7 +89,7 @@ Get the latest RHCOS image [here](https://mirror.openshift.com/pub/openshift-v4/
 openstack image create --container-format=bare --disk-format=qcow2 --file rhcos-${RHCOSVERSION}-openstack.qcow2 rhcos
 ```
 
-**NOTE:** Depending on your OpenStack environment you can upload the RHCOS image as `raw` or `qcow2`. See [Disk and container formats for images](https://docs.openstack.org/image-guide/image-formats.html) for more information. The installer looks for an image named `rhcos`. This could be overridden via the `OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE` environment variable if for instance your cloud operator provides the image under a different name.
+**NOTE:** Depending on your OpenStack environment you can upload the RHCOS image as `raw` or `qcow2`. See [Disk and container formats for images](https://docs.openstack.org/image-guide/image-formats.html) for more information. At the time of writing, the installer looks for an image named `rhcos`.
 
 The public network should be created by the OpenStack administrator. Verify the name/ID of the 'External' network:
 
@@ -404,15 +402,6 @@ API VM:
 
 ```sh
 openstack server delete <cluster name>-api
-```
-
-## Disambiguating the External Network
-
-The installer assumes that the name of the external network is unique. In case there is more than one network with the same name as the desired external network, it’s possible to provide a UUID to specify which network should be used.
-
-```sh
-env TF_VAR_openstack_external_network_id="6a32627e-d98d-40d8-9324-5da7cf1452fc" \
-> bin/openshift-install create cluster
 ```
 
 ## Troubleshooting
