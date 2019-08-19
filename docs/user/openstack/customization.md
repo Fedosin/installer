@@ -26,7 +26,7 @@ controlPlane:
   platform: {}
   replicas: 3
 compute:
-  name: worker
+- name: worker
   platform:
     openstack:
       type: ml.large
@@ -34,12 +34,13 @@ compute:
 metadata:
   name: example
 networking:
-  clusterNetworks:
-  - cidr: 192.168.1.0/16
-    hostSubnetLength: 9
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
   machineCIDR: 10.0.0.0/16
-  serviceCIDR: 172.30.0.0/16
-  type: OpenShiftSDN
+  serviceNetwork:
+  - 172.30.0.0/16
+  networkType: OpenShiftSDN
 platform:
   openstack:
     region: region1
