@@ -11,22 +11,22 @@ In order to run the latest version of the installer in OpenStack, at a bare mini
 * Security Group Rules: 60
 * Routers: 1
 * Subnets: 1
-* RAM: 112 Gb
-* VCPU: 28
-* Volume Storage: 175 Gb
+* RAM: 112 GB
+* vCPUs: 28
+* Volume Storage: 175 GB
 * Instances: 7
 
 ### Master Nodes
 
-The default deployment stands up 3 master nodes, which is the minimum amount required for a cluster. For each master node you stand up, you will need 1 instance, and 1 port available in your quota. They should be assigned a flavor with at least 16 Gb RAM, 4 VCPu, and 25 Gb Disk. It is theoretically possible to run with a smaller flavor, but be aware that if it takes too long to stand up services, or certain essential services crash, the installer could time out, leading to a failed install.
+The default deployment stands up 3 master nodes, which is the minimum amount required for a cluster. For each master node you stand up, you will need 1 instance, and 1 port available in your quota. They should be assigned a flavor with at least 16 GB RAM, 4 vCPUs, and 25 GB Disk. It is theoretically possible to run with a smaller flavor, but be aware that if it takes too long to stand up services, or certain essential services crash, the installer could time out, leading to a failed install.
 
 ### Worker Nodes
 
-The default deployment stands up 3 worker nodes. In our testing we determined that 2 was the minimum number of workers you could have to get a successful install, but we don't recommend running with that few. Worker nodes host the applications you run on OpenShift, so it is in your best interest to have more of them. See [here](https://docs.openshift.com/enterprise/3.0/architecture/infrastructure_components/kubernetes_infrastructure.html#node) for more information. The flavor assigned to the worker nodes should have at least 2 VCPUs, 8 Gb RAM and 25 Gb Disk. However, if you are experiencing `Out Of Memory` issues, or your installs are timing out, you should increase the size of your flavor to match the masters: 4 VCPUs and 16 Gb RAM.
+The default deployment stands up 3 worker nodes. In our testing we determined that 2 was the minimum number of workers you could have to get a successful install, but we don't recommend running with that few. Worker nodes host the applications you run on OpenShift, so it is in your best interest to have more of them. See [here](https://docs.openshift.com/enterprise/3.0/architecture/infrastructure_components/kubernetes_infrastructure.html#node) for more information. The flavor assigned to the worker nodes should have at least 2 vCPUs, 8 GB RAM and 25 GB Disk. However, if you are experiencing `Out Of Memory` issues, or your installs are timing out, you should increase the size of your flavor to match the masters: 4 vCPUs and 16 GB RAM.
 
 ### Bootstrap Node
 
-The bootstrap node is a temporary node that is responsible for standing up the control plane on the masters. Only one bootstrap node will be stood up. To do so, you need 1 instance, and 1 port. We recommend a flavor with a minimum of 16 Gb RAM, 4 VCPUs, and 25 Gb Disk.
+The bootstrap node is a temporary node that is responsible for standing up the control plane on the masters. Only one bootstrap node will be stood up and it will be deprovisioned once the production control plane is ready. To do so, you need 1 instance, and 1 port. We recommend a flavor with a minimum of 16 GB RAM, 4 vCPUs, and 25 GB Disk.
 
 ### Swift
 
@@ -48,12 +48,12 @@ openstack quota set --secgroups 8 --secgroup-rules 100 <project>`
 
 ## OpenStack Credentials
 
-You must have a `clouds.yaml` file in order to run the installer. The installer will look for a clouds.yaml file in the following locations in order:
+You must have a `clouds.yaml` file in order to run the installer. The installer will look for a `clouds.yaml` file in the following locations in order:
 
-1. OS_CLIENT_CONFIG_FILE
+1. Value of `OS_CLIENT_CONFIG_FILE` environment variable
 2. Current directory
-3. unix-specific user config directory (~/.config/openstack/clouds.yaml)
-4. unix-specific site config directory (/etc/openstack/clouds.yaml)
+3. unix-specific user config directory (`~/.config/openstack/clouds.yaml`)
+4. unix-specific site config directory (`/etc/openstack/clouds.yaml`)
 
 In many OpenStack distributions, you can generate a `clouds.yaml` file through Horizon. Otherwise, you can make a `clouds.yaml` file yourself.
 Information on this file can be found [here](https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html#config-files) and it looks like:
@@ -106,68 +106,19 @@ openstack network list --long -c ID -c Name -c "Router Type"
 
 ## Isolated Development Environment
 
-If you would like to set up an isolated development environment, you may use a bare metal host running CentOS 7. The following repository includes some instructions and scripts to help with creating a single-node OpenStack development environment for running the installer. Please refer to [this documentation](ocp-doit) for further details.
-
-[ocp-doit]: https://github.com/shiftstack-dev-tools/ocp-doit
+If you would like to set up an isolated development environment, you may use a bare metal host running CentOS 7. The following repository includes some instructions and scripts to help with creating a single-node OpenStack development environment for running the installer. Please refer to [this documentation](https://github.com/shiftstack-dev-tools/ocp-doit) for further details.
 
 ## Initial Setup
 
-If you don't already have the OpenShift Client Tools, follow [these steps](https://docs.openshift.com/enterprise/3.0/cli_reference/get_started_cli.html). Once you have that set up, download the latest stable versions of the [installer](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/). You will need to unzip the tarball with the following command:
+Download the [latest versions](https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest/) of the OpenShift Client and installer and uncompress the tarballs with the `tar` command:
 
 ```sh
 tar -xvf openshift-install-OS-VERSION.tar.gz
 ```
 
-For the time being, the OpenStack platform is not supported in the prompts. We will instead provide you with a template `install-config.yaml` to use below. If you want to go beyond the basic customizations we display below, there is more information available in [this document](customization.md). We have labled sections in the yaml below with the following syntax: (#). Look for the numbers below the template for explanations of how to complete those sections.
+You could either use the interactive wizard to configure the installation or provide an `install-config.yaml` file for it. See [all possible customization](customization.md) via the `install-config.yaml` file.
 
-```yaml
-apiVersion: v1
-baseDomain: (1)
-clusterID:  (2)
-controlPlane:
-  name: master
-  platform: {}
-  replicas: (3)
-compute:
-  name: worker
-  platform:
-    openstack:
-      type: (4)
-  replicas: (5)
-metadata:
-  name: (6)
-networking:
-  clusterNetworks:
-  - cidr: (7)
-    hostSubnetLength: 9
-  type: OpenShiftSDN
-platform:
-  openstack:
-    region: (8)
-    cloud:  (9)
-    externalNetwork: (10)
-    computeFlavor: (11)
-    lbFloatingIP: (12)
-pullSecret: (13)
-sshKey: (14)
-```
-
-1. The domain name and top level domain you want the api to host services at. Example: `example.com`.
-2. A unique hash or identifier for this particular cluster.
-3. The number or master nodes to deploy. See the [OpenStack Requirements](#openstack-requirements) for details on requirements
-4. The Flavor to use for worker nodes. See the [OpenStack Requirements](#openstack-requirements) for details on requirements
-5. The number of worker nodes to deploy. See the [OpenStack Requirements](#openstack-requirements) for details on requirements
-6. A name that identifies your cluster. Your api will be hosted at `<cluster name>.<base domain>`, and its resources will be prepended by `<cluster name>-<clusterID>-`
-7. The CIDR of the OpenStack subnet that your master and worker nodes will be hosted on
-8. OpenStack Region to install the OCP in
-9. OpenStack Cloud in clouds.yaml to use
-10. External network in OpenStack cluster to attach router to
-11. Flavor to use for Master Nodes. See the [OpenStack Requirements](#openstack-requirements) for details on requirements
-12. Floating IP assigned to the API load balancer
-13. The Pull secrete associated with your RHCOS image
-14. A public Key that will be injected onto all nodes in the cluster
-
-Once you create and customize your `install-config.yaml`, we recommend you create a directory for your cluster, and copy the config into it. See the documents on the [recommended workflow](../overview.md#multiple-invocations) for more information about why you should do it this way.
+If you choose to create yourself an `install-config.yaml` file, we recommend you create a directory for your cluster, and copy the configuration file into it. See the documents on the [recommended workflow](../overview.md#multiple-invocations) for more information about why you should do it this way.
 
 ```sh
 mkdir ostest
@@ -182,7 +133,7 @@ All the OpenShift nodes get created in an OpenStack tenant network and as such, 
 
 This method allows you to attach two floating IP (FIP) addresses to endpoints in OpenShift.
 
-You will need to create two floating IP addresses, one to attach to the API load balancer (lb FIP), and one for openshift apps (apps FIP). Note that the LB FIP is the same floating IP as the one you added to your `install-config.yaml`. The following command is an example of how to create floating IPs:
+You will need to create two floating IP addresses, one to attach to the API load balancer (lb FIP), and one for the OpenShift applications (apps FIP). Note that the LB FIP is the same floating IP as the one you added to your `install-config.yaml`. The following command is an example of how to create floating IPs:
 
 ```sh
 openstack floating ip create <external network>
@@ -191,17 +142,12 @@ openstack floating ip create <external network>
 You will also need to add the following records to your DNS:
 
 ```dns
-<lb FIP> api.<cluster name>.<base domain>
-<apps FIP> console-openshift-console.apps.<cluster name>.<base domain>
-<apps FIP> integrated-oauth-server-openshift-authentication.apps.<cluster name>.<base domain>
-<apps FIP> oauth-openshift.apps.<cluster name>.<base domain>
-<apps FIP> prometheus-k8s-openshift-monitoring.apps.<cluster name>.<base domain>
-<apps FIP> grafana-openshift-monitoring.apps.<cluster name>.<base domain>
+api.<cluster name>.<base domain>  IN  A  <lb FIP>
 ```
 
-If you don't have a DNS server under your control, you should add the records to your etc/hosts. **NOTE:** *this will make the API accessible only to you. This is fine for your own testing (and it is enough for the installation to succeed), but it is not enough for a production deployment.*
+If you don't have a DNS server under your control, you should add the records to your `/etc/hosts` file. **NOTE:** *this will make the API accessible only to you. This is fine for your own testing (and it is enough for the installation to succeed), but it is not enough for a production deployment.*
 
-At the time of writing, you will have to create a second floating IP and attach it to the ingress-port if you want to be able to reach *.apps externally.
+At the time of writing, you need to create a second floating IP and attach it to the ingress-port if you want to be able to reach the provisioned workload externally.
 This can be done after the install completes in three steps:
 
 Get the ID of the ingress port:
@@ -216,16 +162,25 @@ Create and associate a floating IP to the ingress port:
 openstack floating ip create --port <ingress port id> <external network>
 ```
 
-### Without Floating IPs
+Add a wildcard A record for `*apps.` in your DNS:
 
-If you don't want to pre-create a floating IP address, you will still want to create the API DNS record or the installer will fail waiting for the API.
-Without the floating IP, you won't know the right IP address of the server ahead of time, so you will have to wait for it to come up and create the DNS records then:
-
-```sh
-watch openstack server list
+```dns
+*.apps.<cluster name>.<base domain>  IN  A  <apps FIP>
 ```
 
-Wait for the `<cluster name>-api` server comes up and you can make your changes then.
+Alternatively, if you don't control the DNS, you can add the hostnames in `/etc/hosts`:
+```
+<apps FIP> console-openshift-console.apps.<cluster name>.<base domain>
+<apps FIP> integrated-oauth-server-openshift-authentication.apps.<cluster name>.<base domain>
+<apps FIP> oauth-openshift.apps.<cluster name>.<base domain>
+<apps FIP> prometheus-k8s-openshift-monitoring.apps.<cluster name>.<base domain>
+<apps FIP> grafana-openshift-monitoring.apps.<cluster name>.<base domain>
+<apps FIP> <app name>.apps.<cluster name>.<base domain>
+```
+
+### Without Floating IPs
+
+If you cannot or don't want to pre-create a floating IP address, the installation should still succeed, however the installer will fail waiting for the API.
 
 **WARNING:** The installer will fail if it can't reach the bootstrap OpenShift API in 30 minutes.
 
@@ -261,9 +216,8 @@ Currently:
 * Deploys 3 master nodes
 * Once the masters are deployed, the bootstrap instance is destroyed
 * Deploys 3 worker nodes
-* The OpenShift UI is served at `https://<cluster name>-api.<cluster domain>` (but you need to create that DNS record yourself)
 
-The installer should finish successfully, though it is still undergoing development and things might break from time to time. Look for a message like this to verify that your install succeded:
+Look for a message like this to verify that your install succeeded:
 
 ```txt
 INFO Install complete!
@@ -280,13 +234,13 @@ If you want to see the status of the apps and services in your cluster during, o
 export KUBECONFIG=ostest/auth/kubeconfig
 ```
 
-After a finished deployment, there should be a node for each master and worker server created. You can check this whith the command:
+After a finished deployment, there should be a node for each master and worker server created. You can check this with the command:
 
 ```sh
 oc get nodes
 ```
 
-To se the version of your OCP cluster, do:
+To see the version of your OpenShift cluster, do:
 
 ```sh
 oc get cluster version
@@ -306,13 +260,13 @@ oc get pods -A
 
 ## Destroying The Cluster
 
-Destroying the cluster has been noticed to sometimes fail. We are working on patching this, but in a mean time the workaround is to simply run it again. To do so, point it to your cluster with this command:
+Destroying the cluster has been noticed to [sometimes fail](https://github.com/openshift/installer/issues/1985). We are working on patching this, but in a mean time the workaround is to simply run it again. To do so, point it to your cluster with this command:
 
 ```sh
 ./openshift-install --log-level debug destroy cluster --dir ostest
 ```
 
-Then, you can delete the folder containing the cluster metatata:
+Then, you can delete the folder containing the cluster metadata:
 
 ```sh
 rm -rf ostest/
@@ -363,13 +317,13 @@ You could also specify a specific IP address with /32 if you wish.
 
 You can verify the operation of the load balancer now if you wish, using the curl commands given below.
 
-Now the DNS entry for `<cluster name>-api.<base domain>` needs to be updated to point to the new load balancer:
+Now the DNS entry for `api.<cluster name>.<base domain>` needs to be updated to point to the new load balancer:
 
 ```txt
-<load balancer ip> <cluster-name>-api.<base domain>
+<load balancer ip> api.<cluster-name>.<base domain>
 ```
 
-The external load balancer should now be operational along with your own DNS solution. It's best to test this configuration before removing the API. The following curl command is an example of how to check functionality:
+The external load balancer should now be operational along with your own DNS solution. The following curl command is an example of how to check functionality:
 
 ```sh
 curl https://<loadbalancer-ip>:6443/version --insecure
@@ -395,13 +349,6 @@ Another useful thing to check is that the ignition configurations are only avail
 
 ```sh
 curl https://<loadbalancer ip>:22623/config/master --insecure
-```
-
-Now that the DNS and load balancer has been moved, we can take down the existing
-API VM:
-
-```sh
-openstack server delete <cluster name>-api
 ```
 
 ## Troubleshooting
