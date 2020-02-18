@@ -4,6 +4,8 @@ package openstack
 import (
 	"fmt"
 
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/servergroups"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 	machineapi "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +29,7 @@ const (
 )
 
 // Machines returns a list of machines for a machinepool.
-func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string) ([]machineapi.Machine, error) {
+func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string, providerOptions ...func(*openstackprovider.OpenstackProviderSpec) error) ([]machineapi.Machine, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != openstack.Name {
 		return nil, fmt.Errorf("non-OpenStack configuration: %q", configPlatform)
 	}
@@ -37,8 +39,15 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 	platform := config.Platform.OpenStack
 
 	az := ""
-	trunk := config.Platform.OpenStack.TrunkSupport
+	trunk := platform.TrunkSupport
+
 	provider := generateProvider(clusterID, platform, pool.Platform.OpenStack, osImage, az, role, userDataSecret, trunk)
+
+	for _, apply := range providerOptions {
+		if err := apply(provider); err != nil {
+			return nil, err
+		}
+	}
 
 	total := int64(1)
 	if pool.Replicas != nil {
@@ -131,6 +140,39 @@ func trunkSupportBoolean(trunkSupport string) (result bool) {
 		result = false
 	}
 	return
+}
+
+// WithServerGroup is a functional option for Machines that sets the machines
+// to spawn in a Nova server group with a soft-anti-affinity policy.
+//
+// https://docs.openstack.org/api-ref/compute/?expanded=create-server-group-detail#server-groups-os-server-groups
+func WithServerGroup(cloud, clusterID, role string) func(*openstackprovider.OpenstackProviderSpec) error {
+	return func(provider *openstackprovider.OpenstackProviderSpec) error {
+		serverGroupName := clusterID + "-" + role
+
+		conn, err := clientconfig.NewServiceClient(
+			"compute",
+			&clientconfig.ClientOpts{
+				Cloud: cloud,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		// Microversion "2.15" is the first that supports "soft"-anti-affinity.
+		// Note that microversions starting from "2.64" use a new syntax for
+		// setting policies.
+		conn.Microversion = "2.15"
+		sg, err := servergroups.Create(conn, &servergroups.CreateOpts{
+			Name:     serverGroupName,
+			Policies: []string{"soft-anti-affinity"},
+		}).Extract()
+
+		provider.ServerGroupID = sg.ID
+
+		return nil
+	}
 }
 
 // ConfigMasters sets the PublicIP flag and assigns a set of load balancers to the given machines
