@@ -237,7 +237,6 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			imageName,
 			"master",
 			"master-user-data",
-			openstack.WithServerGroup(ic.OpenStack.Cloud, clusterID.InfraID, "master"),
 		)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")

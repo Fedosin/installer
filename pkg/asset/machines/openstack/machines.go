@@ -29,7 +29,7 @@ const (
 )
 
 // Machines returns a list of machines for a machinepool.
-func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string, providerOptions ...func(*openstackprovider.OpenstackProviderSpec) error) ([]machineapi.Machine, error) {
+func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string) ([]machineapi.Machine, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != openstack.Name {
 		return nil, fmt.Errorf("non-OpenStack configuration: %q", configPlatform)
 	}
@@ -41,13 +41,13 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 	az := ""
 	trunk := platform.TrunkSupport
 
-	provider := generateProvider(clusterID, platform, pool.Platform.OpenStack, osImage, az, role, userDataSecret, trunk)
-
-	for _, apply := range providerOptions {
-		if err := apply(provider); err != nil {
-			return nil, err
-		}
+	serverGroupID, err := createSoftAntiAffinityServerGroup(platform.Cloud, clusterID, role)
+	if err != nil {
+		return nil, err
 	}
+
+	provider := generateProvider(clusterID, platform, pool.Platform.OpenStack, osImage, az, role, userDataSecret, trunk)
+	provider.ServerGroupID = serverGroupID
 
 	total := int64(1)
 	if pool.Replicas != nil {
@@ -142,37 +142,34 @@ func trunkSupportBoolean(trunkSupport string) (result bool) {
 	return
 }
 
-// WithServerGroup is a functional option for Machines that sets the machines
-// to spawn in a Nova server group with a soft-anti-affinity policy.
-//
+// createSoftAntiAffinityServerGroup creates a new server group woth soft-anti-affinity-policy
 // https://docs.openstack.org/api-ref/compute/?expanded=create-server-group-detail#server-groups-os-server-groups
-func WithServerGroup(cloud, clusterID, role string) func(*openstackprovider.OpenstackProviderSpec) error {
-	return func(provider *openstackprovider.OpenstackProviderSpec) error {
-		serverGroupName := clusterID + "-" + role
+func createSoftAntiAffinityServerGroup(cloud, clusterID, role string) (string, error) {
+	serverGroupName := clusterID + "-" + role
 
-		conn, err := clientconfig.NewServiceClient(
-			"compute",
-			&clientconfig.ClientOpts{
-				Cloud: cloud,
-			},
-		)
-		if err != nil {
-			return err
-		}
-
-		// Microversion "2.15" is the first that supports "soft"-anti-affinity.
-		// Note that microversions starting from "2.64" use a new syntax for
-		// setting policies.
-		conn.Microversion = "2.15"
-		sg, err := servergroups.Create(conn, &servergroups.CreateOpts{
-			Name:     serverGroupName,
-			Policies: []string{"soft-anti-affinity"},
-		}).Extract()
-
-		provider.ServerGroupID = sg.ID
-
-		return nil
+	conn, err := clientconfig.NewServiceClient(
+		"compute",
+		&clientconfig.ClientOpts{
+			Cloud: cloud,
+		},
+	)
+	if err != nil {
+		return "", err
 	}
+
+	// Microversion "2.15" is the first that supports "soft"-anti-affinity.
+	// Note that microversions starting from "2.64" use a new syntax for
+	// setting policies.
+	conn.Microversion = "2.15"
+	sg, err := servergroups.Create(conn, &servergroups.CreateOpts{
+		Name:     serverGroupName,
+		Policies: []string{"soft-anti-affinity"},
+	}).Extract()
+	if err != nil {
+		return "", err
+	}
+
+	return sg.ID, nil
 }
 
 // ConfigMasters sets the PublicIP flag and assigns a set of load balancers to the given machines
