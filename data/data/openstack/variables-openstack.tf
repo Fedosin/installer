@@ -340,3 +340,15 @@ variable "openstack_master_server_group_id" {
   type        = string
   description = "ID of the server group to assign the master servers to."
 }
+
+variable "openstack_machines_subnet_id" {
+  type        = string
+  default     = ""
+  description = "ID of the subnet to use for cluster machines"
+}
+
+variable "openstack_machines_network_id" {
+  type        = string
+  default     = ""
+  description = "ID of the network the machines subnet is on"
+}
