@@ -150,7 +150,6 @@ func TFVars(masterConfig *v1alpha1.OpenstackProviderSpec, cloud string, external
 	if machinesSubnet != "" {
 		cfg.MachinesNetwork, err = getNetworkFromSubnet(cloud, machinesSubnet)
 		if err != nil {
-
 			return nil, err
 		}
 	}
@@ -248,8 +247,8 @@ func getServiceCatalog(cloud string) (*tokens.ServiceCatalog, error) {
 	return serviceCatalog, nil
 }
 
-// getNetworkFromSubnet looks up a subnet in openstack and returns the ID of the network its a part of
-func getNetworkFromSubnet(cloud string, subnet_id string) (string, error) {
+// getNetworkFromSubnet looks up a subnet in openstack and returns the ID of the network it's a part of
+func getNetworkFromSubnet(cloud string, subnetID string) (string, error) {
 	opts := &clientconfig.ClientOpts{
 		Cloud: cloud,
 	}
@@ -259,7 +258,7 @@ func getNetworkFromSubnet(cloud string, subnet_id string) (string, error) {
 		return "", err
 	}
 
-	subnet, err := subnets.Get(networkClient, subnet_id).Extract()
+	subnet, err := subnets.Get(networkClient, subnetID).Extract()
 	if err != nil {
 		return "", err
 	}

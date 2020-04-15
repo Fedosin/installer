@@ -54,8 +54,8 @@ type Platform struct {
 	// +optional
 	IngressVIP string `json:"ingressVIP,omitempty"`
 
-	// NodesSubnet is the UUID of an openstack subnet. This subnet will be used by all nodes created by the installer.
-	// By setting this, the installer will no longer create a netowork and subnet. Setting this option, and leaving
+	// MachinesSubnet is the UUIDv4 of an openstack subnet. This subnet will be used by all nodes created by the installer.
+	// By setting this, the installer will no longer create a network and subnet. Setting this option, and leaving
 	// Networking.MachineNetwork empty will result in Networking.MachineNetwork being set to the CIDR of NodesSubnet in OpenStack.
 	// The subnet and network used for MachinesSubnet will not be deleted by the installer.
 	// +optional

@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/apparentlymart/go-cidr/cidr"
-	guuid "github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -26,7 +25,7 @@ func ValidatePlatform(p *openstack.Platform, n *types.Networking, fldPath *field
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("cloud"), p.Cloud, validClouds))
 	} else {
 		if p.MachinesSubnet != "" {
-			if !validateUUIDv4(p.MachinesSubnet) {
+			if !validUUIDv4(p.MachinesSubnet) {
 				allErrs = append(allErrs, field.InternalError(fldPath.Child("machinesSubnet"), errors.New("invalid subnet ID")))
 			} else {
 				CIDR, err := fetcher.GetSubnetCIDR(p.Cloud, p.MachinesSubnet)
@@ -82,7 +81,7 @@ func ValidatePlatform(p *openstack.Platform, n *types.Networking, fldPath *field
 		}
 
 		if len(p.ExternalDNS) > 0 && p.MachinesSubnet != "" {
-			allErrs = append(allErrs, field.InternalError(fldPath.Child("machinesSubnet"), fmt.Errorf("You cannot set an externalDNS when you are using a custom machinesSubnet")))
+			allErrs = append(allErrs, field.InternalError(fldPath.Child("machinesSubnet"), fmt.Errorf("externalDNS can't be set when using a custom machinesSubnet")))
 		}
 
 		for _, ip := range p.ExternalDNS {
@@ -149,20 +148,4 @@ func validateVIP(vip string, n *types.Networking) error {
 		}
 	}
 	return nil
-}
-
-// validUUIDv4 checks if string is in UUID v4 format
-// For more information: https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)
-func validateUUIDv4(s string) bool {
-	uuid, err := guuid.Parse(s)
-	if err != nil {
-		return false
-	}
-
-	// check that version of the uuid
-	if uuid.Version().String() != "VERSION_4" {
-		return false
-	}
-
-	return true
 }

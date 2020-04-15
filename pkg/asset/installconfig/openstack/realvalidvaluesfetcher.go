@@ -193,7 +193,7 @@ func (f realValidValuesFetcher) GetFloatingIPNames(cloud string, floatingNetwork
 	return floatingIPNames, nil
 }
 
-func (f realValidValuesFetcher) GetSubnetCIDR(cloud string, subnet_id string) (string, error) {
+func (f realValidValuesFetcher) GetSubnetCIDR(cloud string, subnetID string) (string, error) {
 	opts := &clientconfig.ClientOpts{
 		Cloud: cloud,
 	}
@@ -203,7 +203,7 @@ func (f realValidValuesFetcher) GetSubnetCIDR(cloud string, subnet_id string) (s
 		return "", err
 	}
 
-	subnet, err := subnets.Get(networkClient, subnet_id).Extract()
+	subnet, err := subnets.Get(networkClient, subnetID).Extract()
 	if err != nil {
 		return "", err
 	}

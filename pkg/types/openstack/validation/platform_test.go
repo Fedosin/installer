@@ -212,7 +212,7 @@ func TestValidatePlatform(t *testing.T) {
 			valid:               true,
 		},
 		{
-			name: "valid MachinesSubnet autifill machineNetwork",
+			name: "valid MachinesSubnet autofill machineNetwork",
 			platform: func() *openstack.Platform {
 				p := validPlatform()
 				p.MachinesSubnet = "c664df47-4f7e-4852-819e-e66f9882b7b3"
@@ -294,7 +294,7 @@ func TestValidatePlatform(t *testing.T) {
 			}
 			if tc.invalidMachinesSubnet {
 				fetcher.EXPECT().GetSubnetCIDR(tc.platform.Cloud, tc.platform.MachinesSubnet).
-					Return("", errors.New("Invalid machinesSubnet")).
+					Return("", errors.New("invalid machinesSubnet")).
 					MaxTimes(1)
 			}
 

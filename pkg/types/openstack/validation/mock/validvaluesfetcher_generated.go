@@ -123,16 +123,16 @@ func (mr *MockValidValuesFetcherMockRecorder) GetFloatingIPNames(cloud, floating
 }
 
 // GetSubnetCIDR mocks base method.
-func (m *MockValidValuesFetcher) GetSubnetCIDR(cloud, subnet_id string) (string, error) {
+func (m *MockValidValuesFetcher) GetSubnetCIDR(cloud, subnetID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetCIDR", cloud, subnet_id)
+	ret := m.ctrl.Call(m, "GetSubnetCIDR", cloud, subnetID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSubnetCIDR indicates an expected call of GetSubnetCIDR.
-func (mr *MockValidValuesFetcherMockRecorder) GetSubnetCIDR(cloud, subnet_id interface{}) *gomock.Call {
+func (mr *MockValidValuesFetcherMockRecorder) GetSubnetCIDR(cloud, subnetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetCIDR", reflect.TypeOf((*MockValidValuesFetcher)(nil).GetSubnetCIDR), cloud, subnet_id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetCIDR", reflect.TypeOf((*MockValidValuesFetcher)(nil).GetSubnetCIDR), cloud, subnetID)
 }
