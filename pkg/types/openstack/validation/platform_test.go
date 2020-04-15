@@ -287,16 +287,6 @@ func TestValidatePlatform(t *testing.T) {
 					Return([]string{"octavia"}, nil).
 					MaxTimes(1)
 			}
-			if tc.validMachinesSubnet {
-				fetcher.EXPECT().GetSubnetCIDR(tc.platform.Cloud, tc.platform.MachinesSubnet).
-					Return("10.0.0.0/16", nil).
-					MaxTimes(1)
-			}
-			if tc.invalidMachinesSubnet {
-				fetcher.EXPECT().GetSubnetCIDR(tc.platform.Cloud, tc.platform.MachinesSubnet).
-					Return("", errors.New("invalid machinesSubnet")).
-					MaxTimes(1)
-			}
 
 			testConfig := types.InstallConfig{}
 			testConfig.ObjectMeta.Name = "test"

@@ -35,13 +35,11 @@ func SetInstallConfigDefaults(c *types.InstallConfig) {
 				{CIDR: *libvirtdefaults.DefaultMachineCIDR},
 			}
 		}
-		// if openstack user entered a custom subnet and did not enter the MachineCIDR
-		// leave it as an empty ipnet object for openstack to fill in with the cidr
-		// from MachinesSubnet
+		// if openstack user entered a custom subnet and did not enter the MachineCIDR,
+		// leave it empty here and allow openstackdefaults.SetPlatformDefaults to define
+		// the value later.
 		if c.Platform.OpenStack != nil && c.Platform.OpenStack.MachinesSubnet != "" {
-			c.Networking.MachineNetwork = []types.MachineNetworkEntry{
-				{CIDR: ipnet.IPNet{}},
-			}
+			c.Networking.MachineNetwork = []types.MachineNetworkEntry{}
 		}
 	}
 	if c.Networking.NetworkType == "" {
